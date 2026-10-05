@@ -1,0 +1,30 @@
+# Reglas de alerta. Se ven en http://localhost:9090/alerts
+groups:
+  - name: tienda
+    rules:
+      # Más del 5% de las peticiones de un servicio terminan en error 5xx.
+      - alert: TasaDeErroresAlta
+        expr: |
+          sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*", status=~"5.."}[1m]))
+            /
+          sum by (application) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))
+            > 0.05
+        for: 30s
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "El servicio {{ $labels.application }} tiene una tasa de errores 5xx alta"
+          descripcion: "{{ $value | humanizePercentage }} de las peticiones terminan en error 5xx (umbral: 5%)."
+
+      # El percentil 95 de la latencia de un servicio supera 500 ms.
+      - alert: LatenciaP95Alta
+        expr: |
+          histogram_quantile(0.95,
+            sum by (application, le) (rate(http_server_requests_seconds_bucket{uri!~"/actuator.*"}[1m]))
+          ) > 0.5
+        for: 30s
+        labels:
+          severidad: advertencia
+        annotations:
+          resumen: "El servicio {{ $labels.application }} responde lento"
+          descripcion: "El p95 de la latencia es {{ $value | humanizeDuration }} (umbral: 500 ms)."

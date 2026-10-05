@@ -1,0 +1,66 @@
+name: CI
+
+# Cuándo se ejecuta: en cada push (a cualquier rama), en cada Pull Request hacia main
+# y manualmente desde la pestaña Actions (workflow_dispatch).
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Principio de mínimo privilegio: el pipeline solo necesita leer el código.
+permissions:
+  contents: read
+
+jobs:
+  build-y-pruebas:
+    name: Build, pruebas y cobertura
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v7
+
+      - name: Instalar Java 21 (con caché de dependencias Maven)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # verify = compilar + pruebas unitarias + reporte JaCoCo + verificar umbral de cobertura (80%).
+      - name: Compilar, probar y verificar cobertura
+        run: mvn -B verify
+
+      # if: always() -> se suben los reportes incluso si las pruebas fallaron.
+      - name: Publicar reportes de pruebas y cobertura
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reportes
+          path: |
+            target/surefire-reports/
+            target/site/jacoco/
+          if-no-files-found: ignore
+
+  imagen-docker:
+    name: Construir la imagen Docker
+    needs: build-y-pruebas
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v7
+
+      # Verifica que el Dockerfile sigue construyendo. La imagen no se publica en ningún registro.
+      - name: Construir la imagen
+        run: docker build -t dyasmonitoreo/tienda:ci .
+
+      # Valida la sintaxis del docker-compose.yaml y de la configuración de Prometheus.
+      - name: Validar docker-compose.yaml
+        run: docker compose config --quiet
+
+      - name: Validar configuración y reglas de Prometheus
+        run: |
+          docker run --rm --entrypoint promtool -v "$PWD/prometheus:/etc/prometheus:ro" \
+            prom/prometheus:v3.15.0 check config /etc/prometheus/prometheus.yml

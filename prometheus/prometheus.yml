@@ -1,0 +1,22 @@
+# Configuración de Prometheus para el taller.
+global:
+  scrape_interval: 5s        # cada cuánto se leen las métricas (en producción suele ser 15s - 60s)
+  evaluation_interval: 5s    # cada cuánto se evalúan las reglas de alerta
+
+rule_files:
+  - /etc/prometheus/alertas.yml
+
+scrape_configs:
+  # Los dos servicios de la tienda publican sus métricas en /actuator/prometheus.
+  - job_name: tienda
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - pedidos:8081
+          - inventario:8082
+
+  # Prometheus también expone sus propias métricas.
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090

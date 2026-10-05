@@ -1,0 +1,118 @@
+# Stack del taller: dos servicios de la tienda + Prometheus + Grafana + Jaeger.
+# Levantar:   docker compose up -d --build
+# Tráfico:    docker compose run --rm k6
+# Apagar:     docker compose down -v
+name: dyasmonitoreo
+
+services:
+
+  # ---------- Aplicación ----------
+  # La imagen de la tienda se construye aquí, a partir del Dockerfile de la raíz.
+  inventario:
+    build: .
+    image: dyasmonitoreo/tienda:1.0
+    environment:
+      SPRING_PROFILES_ACTIVE: inventario
+      OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      # Valores iniciales del simulador de fallas (se cambian en caliente con POST /api/fallas)
+      FALLAS_LATENCIA_MS: "0"
+      FALLAS_TASA_ERROR: "0"
+    ports:
+      - "8082:8082"
+    depends_on:
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8082/actuator/health/readiness"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  # Misma imagen que inventario (se construye una sola vez); cambia solo el perfil activo.
+  pedidos:
+    image: dyasmonitoreo/tienda:1.0
+    pull_policy: never   # la imagen es local (la construye el servicio inventario); no se busca en Docker Hub
+    environment:
+      SPRING_PROFILES_ACTIVE: pedidos
+      OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      INVENTARIO_URL: http://inventario:8082
+    ports:
+      - "8081:8081"
+    depends_on:
+      inventario:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health/readiness"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  # ---------- Métricas ----------
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alertas.yml:/etc/prometheus/alertas.yml:ro
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ---------- Dashboards ----------
+  grafana:
+    image: grafana/grafana:13.2.3
+    environment:
+      # Credenciales solo para el laboratorio local. En un despliegue real van en un secreto.
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      # Permite ver los dashboards sin iniciar sesión (solo lectura)
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/tienda.json
+      # Jaeger 2.21 ya no tiene la API HTTP antigua (/api/services, /api/traces); con esta opción
+      # la fuente de datos Jaeger de Grafana usa la API nueva (/api/v3).
+      GF_FEATURE_TOGGLES_ENABLE: jaegerEnableGrpcEndpoint
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ---------- Trazas ----------
+  jaeger:
+    image: jaegertracing/jaeger:2.21.0
+    ports:
+      - "16686:16686"   # interfaz web de Jaeger
+      - "4317:4317"     # OTLP por gRPC
+      - "4318:4318"     # OTLP por HTTP (lo usan los servicios de la tienda)
+
+  # ---------- Generador de tráfico (no arranca con "up"; se ejecuta con "docker compose run --rm k6") ----------
+  k6:
+    image: grafana/k6:2.3.0
+    profiles: ["trafico"]
+    volumes:
+      - ./k6:/scripts:ro
+    environment:
+      PEDIDOS_URL: http://pedidos:8081
+      INVENTARIO_URL: http://inventario:8082
+    command: ["run", "/scripts/trafico.js"]
+    depends_on:
+      pedidos:
+        condition: service_healthy

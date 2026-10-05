@@ -1,0 +1,11 @@
+# Solo el pom.xml y src/ hacen falta para construir la imagen
+target/
+.git/
+.github/
+.idea/
+.vscode/
+grafana/
+prometheus/
+k6/
+img/
+*.md

@@ -1,0 +1,10 @@
+# Grafana carga como dashboards todos los archivos JSON de esta carpeta del contenedor.
+apiVersion: 1
+
+providers:
+  - name: tienda
+    folder: Taller DYAS
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
