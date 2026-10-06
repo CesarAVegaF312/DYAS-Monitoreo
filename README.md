@@ -1,7 +1,7 @@
 # Taller de Monitoreo y Observabilidad con Prometheus, Grafana y Jaeger
 
 Este taller tiene como objetivo aprender a **instrumentar una aplicación**, **recolectar sus métricas y trazas** y **visualizarlas** para entender qué está pasando en un sistema que ya está desplegado en contenedores.
-Es la sesión que sigue al taller de Docker. En la **entrega 3 del proyecto del curso** la observabilidad es una **bonificación (+5)**: métricas de la aplicación con un tablero en Grafana ligado al SLO (latencia p95, tasa de error y *throughput*), o logs centralizados con búsqueda.
+Se asume que conoces Docker y Docker Compose. En la **entrega 3 del proyecto del curso** la observabilidad es una **bonificación (+5)**: métricas de la aplicación con un tablero en Grafana ligado al SLO (latencia p95, tasa de error y *throughput*), o logs centralizados con búsqueda.
 
 ---
 
