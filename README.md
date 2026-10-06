@@ -1,7 +1,7 @@
 # Taller de Monitoreo y Observabilidad con Prometheus, Grafana y Jaeger
 
 Este taller tiene como objetivo aprender a **instrumentar una aplicación**, **recolectar sus métricas y trazas** y **visualizarlas** para entender qué está pasando en un sistema que ya está desplegado en contenedores.
-Es la sesión que sigue al taller de Docker y cubre el requisito de la **entrega 3 del proyecto del curso**: *monitorear despliegues con Prometheus, Grafana y centralización de logs*.
+Es la sesión que sigue al taller de Docker. En la **entrega 3 del proyecto del curso** la observabilidad es una **bonificación (+5)**: métricas de la aplicación con un tablero en Grafana ligado al SLO (latencia p95, tasa de error y *throughput*), o logs centralizados con búsqueda.
 
 ---
 
@@ -697,7 +697,7 @@ Estructura mínima sugerida del Wiki:
 - ¿Por qué la latencia se mide con percentiles y no con el promedio?
 - ¿Por qué los errores 404 y 409 no cuentan para la alerta de tasa de errores?
 - ¿Qué pasaría con las trazas si `InventarioClienteHttp` usara `RestClient.create()`?
-- ¿Qué les falta a este stack para cumplir la entrega 3 del proyecto (por ejemplo, la centralización de logs)?
+- ¿Qué tendrían que agregar a este stack para obtener la bonificación de observabilidad de la entrega 3 en su proyecto?
 
 ### 9) Rúbrica – Taller de Monitoreo y Observabilidad
 
@@ -738,21 +738,22 @@ A través del caso de la tienda (`pedidos` e `inventario`) se conectan las prác
 3. **Usa los clientes HTTP autoconfigurados** (`RestClient.Builder`, `WebClient.Builder`) en las llamadas entre servicios.
 4. **Copia las carpetas `prometheus/` y `grafana/`** y los servicios correspondientes del `docker-compose.yaml`; cambia los *targets* de `prometheus.yml` por los de tu proyecto.
 5. **Define al menos una métrica de negocio** propia de tu dominio (reservas creadas, pagos rechazados, mensajes procesados...).
-6. **Centraliza los logs** (Loki, Elasticsearch/OpenSearch u otro) para cumplir ese punto de la entrega 3.
+6. **Liga el tablero al SLO** definido en el Corte 2: muestra la latencia p95, la tasa de error y el *throughput*, con el umbral del SLO como referencia.
+7. **(Opcional) Centraliza los logs** con Loki, Elasticsearch u OpenSearch; la bonificación también se obtiene por esta vía.
 
-Checklist para el Proyecto 3 antes de la siguiente clase:
+Checklist para la bonificación de observabilidad del Proyecto 3 (sección 6 del enunciado):
 
 - [ ] Cada servicio expone `/actuator/prometheus` (o el equivalente en su lenguaje) y aparece en **UP** en Prometheus.
-- [ ] Un dashboard aprovisionado desde el repositorio con las métricas **RED** de cada servicio.
+- [ ] Un dashboard aprovisionado desde el repositorio con la **latencia p95**, la **tasa de error** y el ***throughput*** de cada servicio, ligados al SLO.
 - [ ] Al menos una **métrica de negocio** propia, graficada.
 - [ ] Al menos una **regla de alerta** sobre errores o latencia.
 - [ ] Trazas en Jaeger que atraviesan **al menos dos** servicios o componentes.
-- [ ] Logs con **traceId** y un plan para centralizarlos.
+- [ ] Logs con **traceId** (y, si se elige esa vía, centralizados con búsqueda).
 
 ---
 
 > **Resultado esperado:**
-> Al finalizar este taller, cada equipo contará con un **stack de observabilidad funcionando** (Prometheus, Grafana y Jaeger) que se levanta con Docker Compose junto a su aplicación, con **métricas RED y de negocio**, **dashboards y alertas versionados en el repositorio** y **trazas distribuidas** correlacionadas con los logs, listo para integrarse al pipeline y al despliegue de la **entrega 3 del proyecto**.
+> Al finalizar este taller, cada equipo contará con un **stack de observabilidad funcionando** (Prometheus, Grafana y Jaeger) que se levanta con Docker Compose junto a su aplicación, con **métricas RED y de negocio**, **dashboards y alertas versionados en el repositorio** y **trazas distribuidas** correlacionadas con los logs, listo para aplicarse al proyecto del curso como bonificación de observabilidad en la **entrega 3**.
 
 ---
 
