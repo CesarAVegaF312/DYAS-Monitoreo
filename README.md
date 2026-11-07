@@ -5,6 +5,36 @@ Se asume que conoces Docker y Docker Compose. En la **entrega 3 del proyecto del
 
 ---
 
+## Integrantes del equipo
+
+| Nombre | Correo institucional | Usuario de GitHub | Responsabilidad en el taller |
+|---|---|---|---|
+| Santiago Escobar | santiagoesga@unisabana.edu.co | [DrearSanti](https://github.com/DrearSanti) | Repositorio y stack (pasos 1, 2 y 8), Wiki: Home y Arquitectura |
+| Mateo Ramírez | mateoraca@unisabana.edu.co | [technologybyteo](https://github.com/technologybyteo) | Métricas y PromQL, dashboard, alertas (pasos 3, 4 y 6) |
+| Antonio Benítez | antonioberu@unisabana.edu.co | [antobeni07](https://github.com/antobeni07) | Trazas, correlación y reflexión (pasos 5 y 7) |
+
+**Documentación del taller:** [Wiki del repositorio](https://github.com/dyas-devsecops-ams/DYAS-Monitoreo_AMS/wiki)
+
+### Levantar el stack con un solo comando
+
+Requisitos: Docker Desktop en ejecución y libres los puertos 8081, 8082, 9090, 3000, 16686, 4317 y 4318.
+
+```sh
+docker compose up -d --build
+```
+
+| Componente | URL |
+|---|---|
+| Pedidos | <http://localhost:8081> |
+| Inventario | <http://localhost:8082> |
+| Prometheus | <http://localhost:9090> |
+| Grafana (`admin` / `admin`) | <http://localhost:3000> |
+| Jaeger | <http://localhost:16686> |
+
+Pruebas unitarias y cobertura: `mvn -B verify`. Tráfico de prueba: `docker compose run --rm k6`. Apagar todo: `docker compose down -v`.
+
+---
+
 ## Objetivo General
 
 Comprender, configurar y aplicar las prácticas de **monitoreo y observabilidad** sobre una aplicación **Java + Spring Boot** desplegada con **Docker Compose**, usando **Spring Boot Actuator y Micrometer** para publicar métricas, **Prometheus** para recolectarlas y evaluar alertas, **Grafana** para construir dashboards, y **OpenTelemetry con Jaeger** para seguir una petición a través de varios servicios, de forma que el equipo pueda detectar y diagnosticar fallas a partir de datos y no de suposiciones.
